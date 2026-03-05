@@ -3,6 +3,8 @@
 
 module Task1 where
 
+import Data.Char (isDigit)
+
 -- * Expression data type
 
 -- | Representation of integer arithmetic expressions comprising
@@ -28,7 +30,10 @@ data IExpr =
 -- 9
 --
 evalIExpr :: IExpr -> Integer
-evalIExpr = error "TODO: define evalIExpr"
+evalIExpr (Lit x)   = x
+evalIExpr (Add x y) = evalIExpr x + evalIExpr y
+evalIExpr (Mul x y) = evalIExpr x * evalIExpr y
+
 
 -- * Parsing
 
@@ -55,7 +60,21 @@ class Parse a where
 -- Nothing
 --
 instance Parse IExpr where
-  parse = error "TODO: define parse (Parse IExpr)"
+  parse s = case parseTokens (words s) [] of
+              Just [res] -> Just res
+              _          -> Nothing
+    where
+      parseTokens :: [String] -> [IExpr] -> Maybe [IExpr]
+      parseTokens [] stack = Just stack
+      parseTokens (tok:toks) stack
+        | all isDigit tok = parseTokens toks (Lit (read tok) : stack)
+        | tok == "+"      = case stack of
+                              (x:y:xs) -> parseTokens toks (Add y x : xs)
+                              _          -> Nothing
+        | tok == "*"      = case stack of
+                              (x:y:xs) -> parseTokens toks (Mul y x : xs)
+                              _          -> Nothing
+        | otherwise       = Nothing
 
 -- * Evaluation with parsing
 
@@ -77,4 +96,6 @@ instance Parse IExpr where
 -- Nothing
 --
 evaluateIExpr :: String -> Maybe Integer
-evaluateIExpr = error "TODO: define evaluateIExpr"
+evaluateIExpr s = case parse s of
+                    Just expr -> Just (evalIExpr expr)
+                    Nothing   -> Nothing
